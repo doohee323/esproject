@@ -1,4 +1,23 @@
-This is your new Play application
+Calling elasticsearch in Play! java stack.
 =====================================
 
-This file will be packaged with your application, when using `play dist`.
+ㅇ index
+	0. play! installation
+		http://www.playframework.com/documentation/2.2.x/Installing
+		download and PATH
+	1. making play! app (esproject)
+	2. changing the app for eclipse
+	3. add elasticsearch libraries to play!
+	4. making the route for test (put elasticsearch index)
+	5. coding with sample util class
+	6. debugging the play!
+	7. run elasticsearch servers
+	8. monitoring elasticsearch
+	9. check out query result with java API
+
+cf.
+http://doohee323.blogspot.kr/2014/04/elasticsearch-with-hanb-elasticsearch.html
+http://doohee323.blogspot.kr/2014/04/calling-elasticsearch-in-play-java-stack.html
+
+
+	
