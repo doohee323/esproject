@@ -2,11 +2,14 @@ package services;
 
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +34,6 @@ public class ElasticsearchService {
 	 * @param aType type name.
 	 * @param id uid.
 	 * @param content index content.
-	 * @throws Exception
 	 */
 	public static void addIndexing(String aIndex, String aType, Long id, String content) {
 		if(client == null) {
@@ -43,13 +45,30 @@ public class ElasticsearchService {
 				.execute().actionGet();
 		log.debug(response.getId());
 	}
+	
+	/**
+	 * get index<br>
+	 * @param aIndex index name.
+	 * @param aTerm term name.
+	 * @return SearchResponse
+	 */
+	public static SearchResponse getTerm(String aIndex, String aKey, String aValue) {
+		if(client == null) {
+			init(Play.application().configuration()
+					.getString("elasticsearch.clusterName"));
+		}
+		SearchResponse response = client.prepareSearch(aIndex).setSearchType( 
+				 SearchType.DFS_QUERY_THEN_FETCH).setQuery(QueryBuilders.termQuery(aKey, 
+						 aValue)).setFrom(0).setSize(60).setExplain(true).execute().actionGet(); 
+		
+		return response;
+	}	
 
 	/**
 	 * registering elasticsearch client TransportAddress<br>
 	 * cluster.node.list<br>
 	 * @param settings
 	 *            client settings Info.
-	 * @throws Exception
 	 */
 	protected static Client buildClient(Settings settings) {
 		TransportClient client = new TransportClient(settings);
@@ -68,7 +87,6 @@ public class ElasticsearchService {
 	 * @param address
 	 *            node's ip:port Info.
 	 * @return InetSocketTransportAddress
-	 * @throws Exception
 	 */
 	private static InetSocketTransportAddress toAddress(String address) {
 		if (address == null)
