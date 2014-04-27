@@ -82,7 +82,7 @@ public class EsService {
 	 * @param content
 	 *            index content.
 	 */
-	public static void addIndexing(String aIndex, String aType, Long id,
+	public static IndexResponse addIndexing(String aIndex, String aType, Long id,
 			Map<String, Object> map) {
 		if (client == null) {
 			init();
@@ -98,9 +98,10 @@ public class EsService {
 				.setRefresh(true).setOperationThreaded(false).execute()
 				.actionGet();
 		log.debug(response.getId());
+		return response;
 	}
 
-	public static void addIndexing(String aIndex, String aType,
+	public static IndexResponse addIndexing(String aIndex, String aType,
 			XContentBuilder builder, Long id, Map<String, Object> map) {
 		if (client == null) {
 			init(builder);
@@ -117,6 +118,7 @@ public class EsService {
 				.actionGet();
 
 		log.debug(response.getId());
+		return response;
 	}
 
 	/**
