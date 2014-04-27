@@ -12,7 +12,6 @@ import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -35,12 +34,12 @@ import play.Play;
 
 public class EsService {
 
-	private static final Logger log = LoggerFactory
-			.getLogger(EsService.class);
+	private static final Logger log = LoggerFactory.getLogger(EsService.class);
 
 	static Client client;
 	static String clusterName;
 	static String nodes;
+	static XContentBuilder builder;
 
 	public static void init() {
 		if (clusterName == null) {
@@ -54,6 +53,11 @@ public class EsService {
 					.getString("elasticsearch.nodes");
 		}
 		client = buildClient(settings);
+	}
+
+	public static void init(XContentBuilder aBuilder) {
+		builder = aBuilder;
+		init();
 	}
 
 	public static void init(String aCluster, String aNode) {
@@ -83,11 +87,35 @@ public class EsService {
 		if (client == null) {
 			init();
 		}
+		
+		if(!isIndexExist(aIndex)) {
+			client.admin().indices().create(new CreateIndexRequest(aIndex)
+	        .mapping(aType)).actionGet();
+		}
+		
+		IndexResponse response = client
+				.prepareIndex(aIndex, aType, String.valueOf(id)).setSource(map)
+				.setRefresh(true).setOperationThreaded(false).execute()
+				.actionGet();
+		log.debug(response.getId());
+	}
+
+	public static void addIndexing(String aIndex, String aType,
+			XContentBuilder builder, Long id, Map<String, Object> map) {
+		if (client == null) {
+			init(builder);
+		}
+
+		if(!isIndexExist(aIndex)) {
+			client.admin().indices().create(new CreateIndexRequest(aIndex)
+	        .mapping(aType, builder)).actionGet();
+		}
 
 		IndexResponse response = client
 				.prepareIndex(aIndex, aType, String.valueOf(id)).setSource(map)
 				.setRefresh(true).setOperationThreaded(false).execute()
 				.actionGet();
+
 		log.debug(response.getId());
 	}
 
@@ -185,7 +213,6 @@ public class EsService {
 				.setIndices(index).execute().actionGet().getState();
 		IndexMetaData inMetaData = clusterState.getMetaData().index(index);
 		MappingMetaData metad = inMetaData.mapping(type);
-
 		if (metad != null) {
 			try {
 				String structure = metad.getSourceAsMap().toString();
@@ -197,13 +224,13 @@ public class EsService {
 	}
 
 	public static PutMappingResponse createIndex(String index, String type,
-			XContentBuilder typemapping) {
+			XContentBuilder builder) {
 		// put mapping before index creation
-		// XContentBuilder typemapping = buildJsonMappings();
+		// XContentBuilder builder = buildJsonMappings();
 		// client.admin()
 		// .indices()
 		// .create(new CreateIndexRequest(index)
-		// .mapping(type, typemapping)).actionGet();
+		// .mapping(type, builder)).actionGet();
 
 		// put mapping after index creation
 		client.admin().indices().create(new CreateIndexRequest(index))
@@ -211,7 +238,7 @@ public class EsService {
 		PutMappingResponse response = null;
 		try {
 			response = client.admin().indices().preparePutMapping(index)
-					.setType(type).setSource(typemapping.string()).execute()
+					.setType(type).setSource(builder.string()).execute()
 					.actionGet();
 		} catch (IOException e) {
 			e.printStackTrace();
