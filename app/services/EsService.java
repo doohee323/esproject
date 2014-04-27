@@ -24,6 +24,8 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.FilteredQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -82,17 +84,18 @@ public class EsService {
 	 * @param content
 	 *            index content.
 	 */
-	public static IndexResponse addIndexing(String aIndex, String aType, Long id,
-			Map<String, Object> map) {
+	public static IndexResponse addIndexing(String aIndex, String aType,
+			Long id, Map<String, Object> map) {
 		if (client == null) {
 			init();
 		}
-		
-		if(!isIndexExist(aIndex)) {
-			client.admin().indices().create(new CreateIndexRequest(aIndex)
-	        .mapping(aType)).actionGet();
+
+		if (!isIndexExist(aIndex)) {
+			client.admin().indices()
+					.create(new CreateIndexRequest(aIndex).mapping(aType))
+					.actionGet();
 		}
-		
+
 		IndexResponse response = client
 				.prepareIndex(aIndex, aType, String.valueOf(id)).setSource(map)
 				.setRefresh(true).setOperationThreaded(false).execute()
@@ -107,9 +110,11 @@ public class EsService {
 			init(builder);
 		}
 
-		if(!isIndexExist(aIndex)) {
-			client.admin().indices().create(new CreateIndexRequest(aIndex)
-	        .mapping(aType, builder)).actionGet();
+		if (!isIndexExist(aIndex)) {
+			client.admin()
+					.indices()
+					.create(new CreateIndexRequest(aIndex).mapping(aType,
+							builder)).actionGet();
 		}
 
 		IndexResponse response = client
@@ -160,6 +165,29 @@ public class EsService {
 				.setQuery(QueryBuilders.queryString(aQueryString)).setFrom(0)
 				.setSize(60).setExplain(true).execute().actionGet();
 		return response;
+	}
+
+	/**
+	 * getCount<br>
+	 * 
+	 * @param aIndex
+	 *            index name.
+	 * @param aQueryString
+	 *            queryString.
+	 * @return SearchResponse
+	 */
+	public static long getCount(String aIndex, String aKey, String aValue) {
+		if (client == null) {
+			init();
+		}
+
+		FilteredQueryBuilder q = QueryBuilders.filteredQuery(
+				QueryBuilders.matchAllQuery(),
+				FilterBuilders.termFilter(aKey, aValue));
+		SearchResponse response = client.prepareSearch(aIndex)
+				.setSearchType(SearchType.COUNT).setQuery(q)	// .setTypes(aType)
+				.execute().actionGet();
+		return response.getHits().getTotalHits();
 	}
 
 	/**

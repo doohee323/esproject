@@ -104,13 +104,14 @@ public class ElasticTest {
 
 			System.out.println("===============");
 			es.getTerm("{\"user_id\":\"doohee323\"}");
+
 			System.out.println("===============");
 			es.getQuery("user_id:doohee323");
-		} catch (NumberFormatException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
+
+			System.out.println("===============");
+			long cnt = EsService.getCount("updatelogs", "user_id", "doohee323");
+			System.out.println("cnt:" + cnt);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
