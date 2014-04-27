@@ -9,8 +9,10 @@ GET     /                           controllers.Application.index()
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 
 # http://localhost:9000/test/putIndex?id=1&indexString={"user_id":"doohee323", "action":"search", "data":"facebook Feed"}
-GET     /test/putIndex        controllers.Esearch.putIndex(id:Long, indexString:String)
+GET     /test/putIndex       controllers.Esearch.putIndex(id:Long, indexString:String)
 
 # http://localhost:9000/test/getTerm?searchString={"user_id":"doohee323"}
 GET     /test/getTerm        controllers.Esearch.getTerm(searchString:String)
-	
+
+# http://localhost:9000/test/getQuery?searchString=user_id:doohee323
+GET     /test/getQuery       controllers.Esearch.getQuery(searchString:String)

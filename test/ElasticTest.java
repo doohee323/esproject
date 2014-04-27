@@ -7,7 +7,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.search.SearchHit;
-import services.ElasticsearchService;
+import services.EsService;
 
 public class ElasticTest {
 	private String cluster = "locketCast";
@@ -57,14 +57,14 @@ public class ElasticTest {
 		// this.client = node.client();
 
 		// cluster
-		ElasticsearchService.init(cluster, nodes);
-		this.client = ElasticsearchService.getClient();
+		EsService.init(cluster, nodes);
+		this.client = EsService.getClient();
 
-		if (ElasticsearchService.isIndexExist(index)) {
-			ElasticsearchService.deleteIndex(this.client, index);
-			ElasticsearchService.createIndex(index, type, buildJsonMappings());
+		if (EsService.isIndexExist(index)) {
+			EsService.deleteIndex(this.client, index);
+			EsService.createIndex(index, type, buildJsonMappings());
 		} else {
-			ElasticsearchService.createIndex(index, type, buildJsonMappings());
+			EsService.createIndex(index, type, buildJsonMappings());
 		}
 	}
 
@@ -75,7 +75,7 @@ public class ElasticTest {
 		System.out
 				.println("(retrieve)----------------------------------------");
 		for (int i = 0; i < 10; i++) {
-			SearchResponse sr = ElasticsearchService.queryString(index, "ATTR_"
+			SearchResponse sr = EsService.getQuery(index, "ATTR_"
 					+ i + ":new value" + i);
 			java.util.Iterator<SearchHit> hit_it = sr.getHits().iterator();
 			while (hit_it.hasNext()) {
@@ -88,13 +88,13 @@ public class ElasticTest {
 
 	public void mappingTest() {
 		System.out.println("(create)----------------------------------------");
-		ElasticsearchService.getMappings(index, type);
+		EsService.getMappings(index, type);
 		createData();
 
 		System.out
 				.println("(retrieve)----------------------------------------");
 		for (int i = 0; i < 10; i++) {
-			SearchResponse sr = ElasticsearchService.queryString(index, "ATTR_"
+			SearchResponse sr = EsService.getQuery(index, "ATTR_"
 					+ i + ":new value" + i);
 			java.util.Iterator<SearchHit> hit_it = sr.getHits().iterator();
 			while (hit_it.hasNext()) {

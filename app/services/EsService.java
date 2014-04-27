@@ -1,6 +1,9 @@
 package services;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -23,28 +26,30 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import play.Play;
 
-public class ElasticsearchService {
+public class EsService {
 
 	private static final Logger log = LoggerFactory
-			.getLogger(ElasticsearchService.class);
+			.getLogger(EsService.class);
 
 	static Client client;
 	static String clusterName;
 	static String nodes;
 
 	public static void init() {
-		if(clusterName == null) {
+		if (clusterName == null) {
 			clusterName = Play.application().configuration()
 					.getString("elasticsearch.clusterName");
 		}
 		Settings settings = ImmutableSettings.settingsBuilder()
 				.put("cluster.name", clusterName).build();
-		if(nodes == null) {
+		if (nodes == null) {
 			nodes = Play.application().configuration()
 					.getString("elasticsearch.nodes");
 		}
@@ -74,13 +79,14 @@ public class ElasticsearchService {
 	 *            index content.
 	 */
 	public static void addIndexing(String aIndex, String aType, Long id,
-			String content) {
+			Map<String, Object> map) {
 		if (client == null) {
 			init();
 		}
-		IndexRequestBuilder requestBuilder = client.prepareIndex(aIndex, aType,
-				String.valueOf(id));
-		IndexResponse response = requestBuilder.setSource(content).execute()
+
+		IndexResponse response = client
+				.prepareIndex(aIndex, aType, String.valueOf(id)).setSource(map)
+				.setRefresh(true).setOperationThreaded(false).execute()
 				.actionGet();
 		log.debug(response.getId());
 	}
@@ -105,9 +111,9 @@ public class ElasticsearchService {
 				.setSize(60).setExplain(true).execute().actionGet();
 		return response;
 	}
-	
+
 	/**
-	 * queryString<br>
+	 * getQuery<br>
 	 * 
 	 * @param aIndex
 	 *            index name.
@@ -115,7 +121,7 @@ public class ElasticsearchService {
 	 *            queryString.
 	 * @return SearchResponse
 	 */
-	public static SearchResponse queryString(String aIndex, String aQueryString) {
+	public static SearchResponse getQuery(String aIndex, String aQueryString) {
 		if (client == null) {
 			init();
 		}
@@ -124,7 +130,7 @@ public class ElasticsearchService {
 				.setQuery(QueryBuilders.queryString(aQueryString)).setFrom(0)
 				.setSize(60).setExplain(true).execute().actionGet();
 		return response;
-	}	
+	}
 
 	/**
 	 * get index<br>
@@ -224,6 +230,17 @@ public class ElasticsearchService {
 		}
 	}
 
+	public static void deleteIndex(String index) {
+		try {
+			DeleteIndexResponse delete = client.admin().indices()
+					.delete(new DeleteIndexRequest(index)).actionGet();
+			if (!delete.isAcknowledged()) {
+			} else {
+			}
+		} catch (Exception e) {
+		}
+	}
+
 	public static boolean isIndexExist(String index) {
 		ActionFuture<IndicesExistsResponse> exists = client.admin().indices()
 				.exists(new IndicesExistsRequest(index));
@@ -231,4 +248,21 @@ public class ElasticsearchService {
 
 		return actionGet.isExists();
 	}
+
+	public static Map<String, Object> getMap(String indexString) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		try {
+			JSONObject properties = new JSONObject(indexString);
+			Iterator<String> iter = properties.keys();
+			while (iter.hasNext()) {
+				String key = String.valueOf(iter.next());
+				String value = properties.getString(key);
+				map.put(key, value);
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return map;
+	}
+
 }
